@@ -41,6 +41,67 @@ tasks:
   - debug:      
       msg: "{{ jenkins_default_admin_password.stdout }}"
 ```
+
+
+## Setting Up a Hardened WordPress with Encrypted Automated Backups
+
+### Setting up nginx web server
+```
+- name: adding nginx signing key
+  apt_key:
+    url: http://nginx.org/keys/nginx_signing.key
+    state: present
+
+- name: adding sources.list deb url for nginx
+  lineinfile:
+    dest: /etc/apt/sources.list
+    line: "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx"
+
+- name: update the cache and install nginx server
+  apt:
+    name: nginx
+    update_cache: yes
+    state: present
+
+- name: updating customized templates for nginx configuration
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dst }}"
+
+  with_items:
+    - { src: "templates/defautlt.conf.j2", dst: "/etc/nginx/conf.d/default.conf" }    
+  
+  notify
+    - start nginx
+    - startup nginx
+```
+### Setting up MySQL database
+```
+- name: create WordPress database    
+  mysql_db:      
+    name: "{{ WordPress_database_name }}"      
+    state: present      
+    login_user: root      
+    login_password: "{{ mysql_root_password }}"
+- name: create WordPress database user    
+  mysql_user:      
+    name: "{{ WordPress_database_username }}"      
+    password: "{{ WordPress_database_password }}"      
+    priv: '"{{ WordPress_database_name }}".*:ALL'      
+    state: present      
+    login_user: root      
+    login_password: "{{ mysql_root_password }}"
+```
+
+
+
+
+
+
+
+
+
+
 ### Prerequisites for setting up Elastic Stack
 ```
 - name: install python 2
